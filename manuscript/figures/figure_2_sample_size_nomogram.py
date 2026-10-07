@@ -14,9 +14,9 @@ feasible sample counts through yellow to red for prohibitive ones.
 Sample counts agree with ``n_invariants.sample_size`` (method 'WB', lam=1). They are solved
 in log10(N), so they remain valid beyond the int64 range of ``sample_size``.
 
-Run from the repository root::
+Run from ``manuscript/``::
 
-    uv run python manuscript/figures/figure_2_sample_size_nomogram.py
+    uv run python figures/figure_2_sample_size_nomogram.py
 """
 
 from __future__ import annotations

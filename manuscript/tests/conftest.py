@@ -1,7 +1,6 @@
-"""Tests of the article code in ``manuscript/``, kept apart from the package's test suite.
+"""Tests of the article code, run in its own environment (``manuscript/pyproject.toml``).
 
-They check that the article code runs against the current package. Run them with
-``uv run pytest manuscript/tests``.
+Run them from ``manuscript/`` with ``uv run --extra sars pytest``.
 """
 
 import sys

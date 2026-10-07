@@ -23,7 +23,7 @@ the Jukes-Cantor and Halpern-Bruno substitution models, and the SARS-CoV-2 pipel
 from .bounds import expected_wasserstein_bound, fournier_constant, sample_size, wasserstein_bound
 from .sampling import empirical_curvature_measure, empirical_distribution
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     "sample_size",

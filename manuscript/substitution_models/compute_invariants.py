@@ -25,9 +25,9 @@ simultaneously.
 Everything random is seeded (``--seed``, default 20260707), so a rerun reproduces the
 precomputed results. It takes about 40 minutes.
 
-Run from the repository root::
+Run from ``manuscript/``::
 
-    uv run python manuscript/substitution_models/compute_invariants.py
+    uv run python substitution_models/compute_invariants.py
 """
 
 from __future__ import annotations

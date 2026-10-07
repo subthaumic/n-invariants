@@ -6,9 +6,9 @@ means, tail masses, the share of half-integer hyperbolicity deficits, and others
 script recomputes all of them from the precomputed histograms that Figure 7 is drawn from.
 It does no sampling and runs in about a second.
 
-Run from the repository root::
+Run from ``manuscript/``::
 
-    uv run python manuscript/sars_cov2/summary_stats.py
+    uv run python sars_cov2/summary_stats.py
 
 Definitions, as in the article:
 

@@ -1,5 +1,7 @@
 # n-invariants
 
+[![DOI](https://zenodo.org/badge/1347439527.svg)](https://doi.org/10.5281/zenodo.23210358)
+
 Companion code for the article
 
 > **Distributions of metric $n$-point invariants and applications to molecular evolution**  
@@ -37,7 +39,7 @@ tests/                  tests of the package
 ```
 
 ```
-manuscript/                         Article material
+manuscript/                         Article material, a separate uv project
   manuscript/figures/               scripts used to generate the article's figures
   manuscript/sars_cov2/             SARS-CoV-2 pipeline and its derived results
   manuscript/substitution_models/   Jukes–Cantor and Halpern–Bruno models, data for Figure 6
@@ -51,11 +53,10 @@ With [uv](https://docs.astral.sh/uv/):
 ```bash
 git clone https://github.com/subthaumic/n-invariants.git
 cd n-invariants
-uv sync                 # uv sync --extra sars for the SARS-CoV-2 pipeline
+uv sync
 ```
 
-This installs the package `n_invariants` and the command `n-invariants`. `uv.lock` pins the
-library versions the article's figures were made with.
+This installs the package `n_invariants` and the command `n-invariants`.
 
 ## Usage
 
@@ -145,10 +146,14 @@ Your own invariant works too:
 
 ## Reproducing the article
 
+The article code in `manuscript/` is a separate uv project, pinned to release v1.0.0 of the
+package and to the library versions the figures were made with.
+
 To reproduce all figures in the article, run
 
 ```bash
-for script in manuscript/figures/figure_*.py; do uv run python "$script"; done
+cd manuscript
+for script in figures/figure_*.py; do uv run python "$script"; done
 ```
 
 The figures are written to `manuscript/figures/output/`. Figures 6 and 7 read precomputed
@@ -164,8 +169,8 @@ All commands: [`manuscript/README.md`](manuscript/README.md).
 ## Tests
 
 ```bash
-uv run pytest                    # package
-uv run pytest manuscript/tests   # article code; the pipeline test requires the sars extra
+uv run pytest                                  # package
+cd manuscript && uv run --extra sars pytest    # article code
 ```
 
 ## Citation

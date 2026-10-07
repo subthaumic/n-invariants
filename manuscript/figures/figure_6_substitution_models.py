@@ -10,9 +10,9 @@ The script only draws. It reads the precomputed data
 ``manuscript/substitution_models/results/invariants.npz``, computed by
 ``manuscript/substitution_models/compute_invariants.py``.
 
-Run from the repository root::
+Run from ``manuscript/``::
 
-    uv run python manuscript/figures/figure_6_substitution_models.py
+    uv run python figures/figure_6_substitution_models.py
 """
 
 from __future__ import annotations

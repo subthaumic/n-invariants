@@ -67,7 +67,7 @@ from sars_utils import (
 # msa_0222.fasta (see the README for the download details). Set its path with the
 # SARS_ALIGNMENT environment variable, or edit the fallback below:
 #
-#     SARS_ALIGNMENT=/path/to/msa_0222.fasta uv run python manuscript/sars_cov2/step0_produce_alignment.py
+#     SARS_ALIGNMENT=/path/to/msa_0222.fasta uv run python sars_cov2/step0_produce_alignment.py
 #
 GIANT_ALIGNMENT = os.environ.get(
     'SARS_ALIGNMENT',

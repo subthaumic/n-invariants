@@ -21,9 +21,9 @@ Reads:  manuscript/sars_cov2/results/invariants/invariants_*.npz  (step 2)
 Writes: output/sars_cov2_invariants.pdf. Only the MDS point clouds are rasterized, which
         keeps the file small.
 
-Run from the repository root::
+Run from ``manuscript/``::
 
-    uv run python manuscript/figures/figure_7_sars_geometry.py
+    uv run python figures/figure_7_sars_geometry.py
 """
 
 from __future__ import annotations

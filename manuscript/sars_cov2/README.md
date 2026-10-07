@@ -27,12 +27,13 @@ Figure 7 and the statistics of Section 8.4 are computed from these files.
 ## Pipeline
 
 ```bash
+cd manuscript
 uv sync --extra sars
 export SARS_ALIGNMENT=/path/to/msa_0222.fasta
-uv run python manuscript/sars_cov2/step0_produce_alignment.py
-uv run python manuscript/sars_cov2/step1_build_haplotype_array.py
-uv run python manuscript/sars_cov2/step2_compute_invariants.py
-uv run python manuscript/sars_cov2/step3_compute_mds.py
+uv run python sars_cov2/step0_produce_alignment.py
+uv run python sars_cov2/step1_build_haplotype_array.py
+uv run python sars_cov2/step2_compute_invariants.py
+uv run python sars_cov2/step3_compute_mds.py
 ```
 
 | Step | Description | Output |
@@ -56,5 +57,6 @@ Runs all four steps on a small synthetic alignment drawn from the Jukes–Cantor
 temporary copy of this directory:
 
 ```bash
-uv run pytest manuscript/tests/test_sars_pipeline.py
+cd manuscript
+uv run --extra sars pytest tests/test_sars_pipeline.py
 ```

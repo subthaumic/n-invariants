@@ -1,0 +1,28 @@
+# The environment of the article code: the package as released in v1.0.0, and the library
+# versions the article's figures were made with. uv.lock in this directory pins all of it.
+[project]
+name = "n-invariants-manuscript"
+version = "1.0.0"
+description = "Code reproducing the figures and analyses of the article"
+requires-python = ">=3.11"
+dependencies = [
+  "n-invariants @ git+https://github.com/subthaumic/n-invariants@v1.0.0",
+  "numpy==2.4.2",
+  "scipy==1.17.0",
+  "matplotlib==3.10.8",
+  "seaborn==0.13.2",
+  "scikit-learn==1.8.0",
+]
+
+[project.optional-dependencies]
+# Only the SARS-CoV-2 pipeline needs this, and only its first step.
+sars = ["hammingdist==1.4.0"]
+
+[dependency-groups]
+dev = ["pytest==9.1.1"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

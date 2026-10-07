@@ -12,9 +12,9 @@ changes the pair sums in steps of two. The black curve is the Gaussian approxima
 nodes at its values on the support ``l_k * Z_{>=0}``. There is no sampling, and the script
 runs in a few seconds.
 
-Run from the repository root::
+Run from ``manuscript/``::
 
-    uv run python manuscript/figures/figure_5_hamming_hyperbolicity_exact.py
+    uv run python figures/figure_5_hamming_hyperbolicity_exact.py
 """
 
 from __future__ import annotations

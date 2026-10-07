@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "n-invariants"
-version = "1.0.0"
+version = "1.1.0"
 description = "Sample sizes and sampling for distributions of metric n-point invariants"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -25,15 +25,6 @@ classifiers = [
 dependencies = [
   "numpy>=2.0",
   "scipy>=1.14",
-  "matplotlib>=3.9",
-  "seaborn>=0.13",
-  "scikit-learn>=1.5",
-]
-
-[project.optional-dependencies]
-# Only the SARS-CoV-2 pipeline needs these, and only its first step.
-sars = [
-  "hammingdist>=1.2",
 ]
 
 [project.scripts]
@@ -70,6 +61,6 @@ ignore = ["A002", "B905", "E741"]
 "manuscript/sars_cov2/step2_compute_invariants.py" = ["F821", "B023"]
 
 [tool.pytest.ini_options]
-# The package's tests. The article code has its own: uv run pytest manuscript/tests
+# The package's tests. The article code in manuscript/ is a separate project with its own.
 testpaths = ["tests", "src"]
 addopts = "--doctest-modules"
