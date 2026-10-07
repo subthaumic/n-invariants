@@ -365,19 +365,16 @@ wheels = [
 
 [[package]]
 name = "n-invariants"
-version = "1.0.0"
-source = { git = "https://github.com/subthaumic/n-invariants?rev=v1.0.0#4126c0398fee4fa2885750f2b5ac734bc20d54bf" }
+version = "1.1.0"
+source = { git = "https://github.com/subthaumic/n-invariants?rev=v1.1.0#73c25bd7308f3e2d59e0965eeaeca607bb4f3b61" }
 dependencies = [
-    { name = "matplotlib" },
     { name = "numpy" },
-    { name = "scikit-learn" },
     { name = "scipy" },
-    { name = "seaborn" },
 ]
 
 [[package]]
 name = "n-invariants-manuscript"
-version = "1.0.0"
+version = "1.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "matplotlib" },
@@ -402,7 +399,7 @@ dev = [
 requires-dist = [
     { name = "hammingdist", marker = "extra == 'sars'", specifier = "==1.4.0" },
     { name = "matplotlib", specifier = "==3.10.8" },
-    { name = "n-invariants", git = "https://github.com/subthaumic/n-invariants?rev=v1.0.0" },
+    { name = "n-invariants", git = "https://github.com/subthaumic/n-invariants?rev=v1.1.0" },
     { name = "numpy", specifier = "==2.4.2" },
     { name = "scikit-learn", specifier = "==1.8.0" },
     { name = "scipy", specifier = "==1.17.0" },

@@ -2,7 +2,7 @@
 
 The code and derived data behind the figures and numbers of the article, with all settings
 fixed to the values used there. This directory is a separate uv project, pinned to release
-v1.0.0 of `n_invariants`. Commands are run from here:
+v1.1.0 of `n_invariants`. Commands are run from here:
 
 ```bash
 cd manuscript
@@ -52,7 +52,7 @@ sampler.
 
 ## Reproducibility
 
-- `uv.lock` pins release v1.0.0 of the package and the library versions used for the
+- `uv.lock` pins release v1.1.0 of the package and the library versions used for the
   article. With them, every figure script reproduces its PDF in `figures/output/` byte for
   byte.
 - All random steps are seeded, so `compute_invariants.py` reproduces

@@ -26,10 +26,11 @@ to the Jukes–Cantor and Halpern–Bruno substitution models and to five millio
 genomes, studying the distributions of pairwise distance, hyperbolicity deficit, and
 Vietoris–Rips persistence diagrams.
 
-This repository provides the Python package `n_invariants`, which computes these sample sizes
-for any $n$, any Wasserstein order $p$ and any Lipschitz metric $n$-point invariant.
-It also contains the material used to reproduce the article's material in the application to
-molecular evolution.
+This repository provides the Python package `n_invariants`. It computes these sample sizes
+for arbitrary $n$, Wasserstein orders $p$ and Lipschitz metric $n$-point invariants, and
+estimates the distributions by sampling from data under a metric of your choice. The
+directory `manuscript/` contains the code and precomputed results that reproduce the
+article's figures and analyses.
 
 ## Contents
 
@@ -146,7 +147,7 @@ Your own invariant works too:
 
 ## Reproducing the article
 
-The article code in `manuscript/` is a separate uv project, pinned to release v1.0.0 of the
+The article code in `manuscript/` is a separate uv project, pinned to release v1.1.0 of the
 package and to the library versions the figures were made with.
 
 To reproduce all figures in the article, run
