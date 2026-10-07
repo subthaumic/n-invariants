@@ -1,16 +1,17 @@
-# exclude top-level data
-/data/
+# Everything the SARS-CoV-2 pipeline derives from the GISAID alignment. The sequence data
+# may not be redistributed, and these are derived directly from it.
+manuscript/sars_cov2/work/
 
-# experiment-local heavy artifacts (keep structure, ignore contents)
-experiments/e??_*/data/**
-experiments/e??_*/results/**
-experiments/e??_*/runs/**
-!experiments/e??_*/data/
-!experiments/e??_*/results/
-!experiments/e??_*/runs/
-!experiments/e??_*/data/.gitkeep
-!experiments/e??_*/results/.gitkeep
-!experiments/e??_*/runs/.gitkeep
+# Generated figures: only the PDFs are committed, and they are exactly the figures in the
+# manuscript.
+manuscript/figures/output/*
+!manuscript/figures/output/*.pdf
+
+# The publishable derived results ARE committed (aggregate histograms and MDS coordinates,
+# no sequences), so Figure 7 and the summary statistics reproduce without any access to
+# the data. Keep them tracked even if a broader rule would catch them.
+!manuscript/sars_cov2/results/
+!manuscript/sars_cov2/results/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

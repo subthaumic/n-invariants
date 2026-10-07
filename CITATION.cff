@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+title: "n-invariants"
+abstract: >-
+  Companion code for the article "Distributions of metric n-point invariants and
+  applications to molecular evolution": sample-size bounds for estimating the distributions
+  of metric n-point invariants by sampling, a sampler for empirical curvature measures and
+  invariant distributions under a chosen metric, and the code reproducing the figures and
+  analyses of the article.
+type: software
+license: MIT
+repository-code: "https://github.com/subthaumic/n-invariants"
+authors:
+  - family-names: Bleher
+    given-names: Michael
+    orcid: "https://orcid.org/0000-0002-7796-1665"
+    affiliation: "Institute for Mathematics, Heidelberg University"
+  - family-names: Gómez
+    given-names: Mario
+    orcid: "https://orcid.org/0000-0001-6143-8995"
+  - family-names: Mémoli
+    given-names: Facundo
+    orcid: "https://orcid.org/0000-0001-8409-0549"
+    affiliation: "Department of Mathematics, Rutgers University"
+  - family-names: Neumann
+    given-names: Maximilian
+    orcid: "https://orcid.org/0009-0004-8028-1160"
+    affiliation: "Institute for Mathematics, Heidelberg University"
+  - family-names: Ott
+    given-names: Andreas
+    orcid: "https://orcid.org/0000-0002-2342-6907"
+    affiliation: "Institute for Mathematics, Heidelberg University"
