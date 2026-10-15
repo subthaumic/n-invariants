@@ -6,27 +6,29 @@ the pushforward ``nu_F = F_#(mu_n)`` of the *curvature measure* ``mu_n``, the la
 Monte Carlo means replacing ``mu_n`` by the empirical measure ``mu_{N,n}`` of N sampled
 n-tuples, and ``nu_F`` by its pushforward ``nu_{F,N}``.
 
-This module answers the practical question that makes such an estimate rigorous:
+This module answers the practical questions that make such an estimate rigorous: how many
+n-tuples N to draw so that ``W_p(nu_{F,N}, nu_F) <= epsilon diam(X)`` with probability at
+least ``alpha``, and conversely, what accuracy a given N guarantees. Statement numbers refer
+to the preprint of the article.
 
-    How many n-tuples N must be drawn so that ``W_p(nu_{F,N}, nu_F) <= epsilon diam(X)``
-    with probability at least ``alpha``?
-
-The article answers it in three statements, each implemented here. Statement numbers
-refer to the preprint of the article.
-
-=================  ================================================  ==================================
-Statement          Bounds                                            Function
-=================  ================================================  ==================================
-Thm 6.1, Cor 6.2   ``E[W_p^p]`` for ``mu_n`` and for a Lipschitz F   :func:`expected_wasserstein_bound`
-Cor 6.3            N for ``mu_n``, and so for every Lipschitz F      :func:`sample_size`
-Cor 6.5            N for one Lipschitz F of known range              :func:`sample_size`
-=================  ================================================  ==================================
+=================  =============================================  ================================
+Statement          Bounds                                         Functions
+=================  =============================================  ================================
+Thm 6.1, Cor 6.2   ``E[W_p^p]`` for ``mu_n`` and a Lipschitz F    :func:`wasserstein_moment_bound`
+Cor 6.3            N for ``mu_n``, so for every Lipschitz F       :func:`sample_size`,
+                                                                  :func:`wasserstein_bound`
+Cor 6.5            N for one Lipschitz F of known range           as for Cor 6.3
+Prop 6.6           ``E[W_p^p]`` and N for one real-valued F       the ``*_real_valued`` functions
+all of the above   the sharpest accuracy that N gives each F      :func:`guaranteed_accuracy`
+=================  =============================================  ================================
 
 :func:`wasserstein_bound` is the inverse of :func:`sample_size`: the high-probability bound
-on ``W_p`` that a given N achieves.
+on ``W_p`` that a given N achieves (Lemma 3.13, as in the proofs of Cor 6.3 and Cor 6.5), and
+likewise for the real-valued pair. The ``wasserstein_moment_bound`` functions bound the
+p-th moment ``E[W_p^p]`` instead, in units of ``diam(X)^p``.
 
 Accuracies are in units of ``diam(X)``, so the diameter never enters a sample count. An
-invariant ``F : K_n -> Z`` is described by two constants, which the caller supplies:
+invariant ``F : K_n -> Z`` is described by two constants:
 
 ``lip``
     Its Lipschitz constant with respect to the supremum norm on distance matrices
@@ -39,16 +41,15 @@ invariant ``F : K_n -> Z`` is described by two constants, which the caller suppl
 transfers to every Lipschitz F at once, with error ``epsilon * Lip(F) * diam(X)``, so one
 sample serves any number of invariants. A specific ``lip`` gives the guarantee for that one
 F at error ``epsilon * diam(X)``; with ``lam = lip`` this is Cor 6.3 at accuracy
-``epsilon / lip``, and a smaller valid ``lam`` refines it (Cor 6.5). The article's
-invariants (Prop 4.8 and Section 8.4), implemented in :mod:`n_invariants.invariants`:
+``epsilon / lip``, and a smaller valid ``lam`` refines it (Cor 6.5).
 
-=================================  =========================  ===  =====  =====
-Invariant                          Function                   n    lip    lam
-=================================  =========================  ===  =====  =====
-pairwise distance                  ``pairwise_distance``      2    1      1
-four-point hyperbolicity deficit   ``hyperbolicity_deficit``  4    2      1
-(4,1)-persistence                  ``vr_persistence``         4    1      1
-=================================  =========================  ===  =====  =====
+A real-valued F has a much faster rate, ``N^{-1/2}`` whatever n is, and needs only its
+range constant (Prop 6.6). This is a different estimate, which applies the same argument to
+``nu_F`` on the real line instead of to ``mu_n``, so it has its own functions.
+
+:class:`n_invariants.invariants.Invariant` carries ``n``, ``lip``, ``lam`` and whether F is
+real-valued, and :func:`guaranteed_accuracy` reads them to return, for each n-invariant, the sharpest of
+these bounds.
 
 No sample count depends on the number of points of X, so the bounds apply equally to point
 sets too large for a pairwise distance matrix, such as the SARS-CoV-2 haplotypes of the
@@ -60,7 +61,7 @@ The bounds combine two ingredients:
   specializing the explicit non-asymptotic bounds of Fournier [1]_ to ``K_n(X)`` with the
   ``L^inf`` metric, and
 * a concentration inequality turning that expectation bound into a high-probability
-  statement (Lemma 3.12). The default is the bounded-differences inequality of Weed and
+  statement (Lemma 3.13). The default is the bounded-differences inequality of Weed and
   Bach [2]_ (``method="WB"``); Markov and McDiarmid variants are provided for comparison
   and give markedly worse constants.
 
@@ -82,6 +83,8 @@ References
 from __future__ import annotations
 
 import warnings
+from collections.abc import Mapping
+from dataclasses import dataclass
 
 import numpy as np
 from scipy.optimize import fsolve, minimize_scalar
@@ -89,7 +92,12 @@ from scipy.optimize import fsolve, minimize_scalar
 __all__ = [
     "sample_size",
     "wasserstein_bound",
-    "expected_wasserstein_bound",
+    "wasserstein_moment_bound",
+    "sample_size_real_valued",
+    "wasserstein_bound_real_valued",
+    "wasserstein_moment_bound_real_valued",
+    "guaranteed_accuracy",
+    "Guarantee",
     "fournier_constant",
     "N_cover",
     "K_cover",
@@ -214,7 +222,7 @@ def _exponent(d, p):
 
 
 def _concentration(alpha):
-    """The Weed--Bach deviation coefficient ``sqrt(-ln(1-alpha)/2)`` of Lemma 3.12."""
+    """The Weed--Bach deviation coefficient ``sqrt(-ln(1-alpha)/2)`` of Lemma 3.13."""
     return np.sqrt(-0.5 * np.log(1 - alpha))
 
 
@@ -259,8 +267,8 @@ def fournier_constant(n, p, N=None):
     return kappa_3(d, p, m=np.inf)
 
 
-def expected_wasserstein_bound(N, n, p, D=1, lip=1):
-    """Upper bound for ``E[W_p^p]`` from N sampled n-tuples (Thm 6.1, Cor 6.2).
+def wasserstein_moment_bound(N, n, p, D=1, lip=1):
+    """Upper bound for the p-th moment ``E[W_p^p]`` from N sampled n-tuples (Thm 6.1, Cor 6.2).
 
     The bound is ``C(d,p) (lip D)^p N^{-e_{d,p}}``. With ``lip = 1`` it bounds
     ``E[W_p^p(mu_{N,n}, mu_n)]`` (Thm 6.1); with the Lipschitz constant of an invariant F
@@ -290,7 +298,7 @@ def expected_wasserstein_bound(N, n, p, D=1, lip=1):
 # Corollaries 6.3 and 6.5: high-probability bounds and sample counts through K_n(X)
 # ---------------------------------------------------------------------------
 def wasserstein_bound(N, alpha, n, p, D=1, lip=1, lam=None):
-    """High-probability bound on ``W_p`` from N sampled n-tuples (Cor 6.3, Cor 6.5).
+    """High-probability bound on ``W_p`` from N sampled n-tuples (proofs of Cor 6.3, Cor 6.5).
 
     With probability at least ``alpha``,
     ``W_p(nu_{F,N}, nu_F) < (lip^p C N^{-e} + lam^p s N^{-1/2})^{1/p} D``, where
@@ -419,7 +427,7 @@ def sample_size(epsilon, alpha, n, p, lip=1, lam=None, N=None, method="WB"):
     Returns the smallest N for which the bounds of Cor 6.3 and Cor 6.5 guarantee that, with
     probability at least ``alpha``, the empirical measure of N sampled n-tuples is within
     ``epsilon * diam(X)`` of its target in ``W_p``. Fewer samples may suffice, but the
-    bounds cannot certify them. The result depends neither on the number of points of X
+    bounds cannot guarantee it. The result depends neither on the number of points of X
     nor on its diameter.
 
     * ``lip = lam = 1`` (the default): the target is the curvature measure ``mu_n``
@@ -445,7 +453,7 @@ def sample_size(epsilon, alpha, n, p, lip=1, lam=None, N=None, method="WB"):
         Lipschitz constant of the invariant ``F : K_n -> Z``, with respect to the supremum
         norm on distance matrices (Def 4.1). The pairwise distance and the
         (4,1)-persistence are 1-Lipschitz, the four-point hyperbolicity deficit is
-        2-Lipschitz (Prop 4.8).
+        2-Lipschitz (Prop 4.9).
     lam : float, optional
         Range constant: any ``lam`` with ``diam F(K_n(X)) <= lam * diam(X)``. Defaults to
         ``lip``, which is always valid. All three invariants above admit ``lam = 1``.
@@ -476,11 +484,12 @@ def sample_size(epsilon, alpha, n, p, lip=1, lam=None, N=None, method="WB"):
     >>> int(sample_size(epsilon=0.1, alpha=0.995, n=4, p=2))
     117207232
 
-    The hyperbolicity deficit in the SARS-CoV-2 analysis (Section 8.4), which is
-    2-Lipschitz with range constant 1:
+    The quadruples per cutoff in the SARS-CoV-2 analysis (Section 8.4): the curvature
+    measure ``mu_4`` at accuracy 0.1, at the confidence that a union bound over three
+    accuracies at each of five cutoffs turns into 0.95 overall:
 
-    >>> int(sample_size(epsilon=0.1, alpha=0.95, n=4, p=1, lip=2, lam=1))
-    3376863048
+    >>> int(sample_size(epsilon=0.1, alpha=1 - 0.05 / 15, n=4, p=1))
+    53433249
     """
     if method == "WB":
         return _sample_size_wb(epsilon, alpha, n, p, lip=lip, lam=lam, N=N)
@@ -501,3 +510,181 @@ def sample_size(epsilon, alpha, n, p, lip=1, lam=None, N=None, method="WB"):
         f"Unrecognized method {method!r}. Use one of 'WB' (preferred), 'MD', or 'Markov'."
     )
 
+
+
+# ---------------------------------------------------------------------------
+# Proposition 6.6: real-valued n-invariants
+# ---------------------------------------------------------------------------
+def _real_valued_constant(p):
+    """The constant ``C(1,p) = 1 / (2^{1/2} - 2^{1-p})`` of Prop 6.6."""
+    if p < 1:
+        raise ValueError(f"Prop 6.6 needs p >= 1; got p = {p:g}.")
+    return 1 / (2**0.5 - 2 ** (1 - p))
+
+
+def wasserstein_moment_bound_real_valued(N, p, D=1, lam=1):
+    """Upper bound for the p-th moment ``E[W_p^p(nu_{F,N}, nu_F)]`` of a real-valued F (Prop 6.6).
+
+    The bound is ``C(1,p) (lam D)^p N^{-1/2}``. It depends on F only through its range
+    constant ``lam``, and not on the tuple size n.
+
+    Parameters
+    ----------
+    N : int
+        Number of sampled tuples.
+    p : float
+        Order of the Wasserstein distance, at least 1.
+    D : float, default 1
+        Diameter of X. The default gives the bound in units of ``diam(X)^p``.
+    lam : float, default 1
+        Range constant: any ``lam`` with ``diam F(K_n(X)) <= lam * diam(X)``.
+    """
+    return _real_valued_constant(p) * (lam * D) ** p * N ** (-1 / 2)
+
+
+def wasserstein_bound_real_valued(N, alpha, p, D=1, lam=1):
+    """High-probability bound on ``W_p`` for a real-valued invariant F (Prop 6.6).
+
+    With probability at least ``alpha``,
+    ``W_p(nu_{F,N}, nu_F) < ((C(1,p) + s) lam^p N^{-1/2})^{1/p} D``, where
+    ``s = sqrt(-ln(1-alpha)/2)``. It is the inverse of :func:`sample_size_real_valued`.
+
+    Parameters are as in :func:`sample_size_real_valued`, plus the diameter ``D`` of X
+    (default 1, which gives the bound in units of ``diam(X)``).
+    """
+    base = (_real_valued_constant(p) + _concentration(alpha)) * lam**p * N ** (-1 / 2)
+    return base ** (1 / p) * D
+
+
+def sample_size_real_valued(epsilon, alpha, p, lam=1):
+    """Number of tuples sufficient to estimate the distribution of one real-valued invariant.
+
+    Returns the smallest N for which Prop 6.6 guarantees that, with probability at least
+    ``alpha``, ``W_p(nu_{F,N}, nu_F) <= epsilon * diam(X)``:
+    ``N = ((C(1,p) + sqrt(-ln(1-alpha)/2)) lam^p / epsilon^p)^2``. Unlike
+    :func:`sample_size`, it depends neither on the tuple size n nor on the Lipschitz
+    constant of F, only on its range constant ``lam``.
+
+    Parameters
+    ----------
+    epsilon : float
+        Target accuracy, in units of ``diam(X)``.
+    alpha : float
+        Confidence: the probability with which the accuracy is achieved.
+    p : float
+        Order of the Wasserstein distance, at least 1.
+    lam : float, default 1
+        Range constant: any ``lam`` with ``diam F(K_n(X)) <= lam * diam(X)``. The pairwise
+        distance and the four-point hyperbolicity deficit admit ``lam = 1``.
+
+    Returns
+    -------
+    int
+        The required number of sampled tuples.
+
+    Examples
+    --------
+    The four-point hyperbolicity deficit at accuracy 0.1:
+
+    >>> sample_size_real_valued(epsilon=0.1, alpha=0.95, p=1)
+    1324
+    """
+    root = (_real_valued_constant(p) + _concentration(alpha)) * lam**p / epsilon**p
+    return int(np.ceil(root**2))
+
+
+# ---------------------------------------------------------------------------
+# What a sample guarantees for each n-invariant
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class Guarantee:
+    """What N sampled tuples guarantee for one n-invariant.
+
+    With probability at least ``alpha``, ``W_p(nu_{F,N}, nu_F) <= accuracy * diam(X)``, by
+    the article's ``statement``.
+    """
+
+    invariant: str
+    accuracy: float
+    statement: str
+    n_samples: int
+    alpha: float
+    p: float
+
+
+def guaranteed_accuracy(n_samples, invariants, p, alpha=0.999):
+    """The accuracy that N sampled tuples guarantee for each of several n-invariants.
+
+    For each n-invariant F on k points, with Lipschitz constant ``lip`` and range constant
+    ``lam``, returns the sharpest of
+
+    * the bound through the curvature measure ``mu_k``: Cor 6.3 if ``lam = lip``, and its
+      refinement Cor 6.5 if ``lam < lip``;
+    * if F is real-valued, the bound of Prop 6.6, which is preferred when the two agree.
+
+    The accuracy depends only on N and on F, not on the size of the tuples F is evaluated
+    on: on the first k points of N i.i.d. tuples, F sees N i.i.d. k-tuples.
+
+    Each accuracy holds with probability at least ``alpha`` on its own. For several to hold
+    together, choose ``alpha`` by a union bound: m statements at joint confidence ``beta``
+    need ``alpha = 1 - (1 - beta) / m``. The bounds depend only mildly on ``alpha``, so the
+    default 0.999 costs little and covers 10 statements at joint confidence 0.99, or 50 at
+    0.95.
+
+    Parameters
+    ----------
+    n_samples : int
+        Number of sampled tuples N.
+    invariants : mapping of str to Invariant, or iterable of Invariant
+        The n-invariants, as :class:`n_invariants.invariants.Invariant`, which carries
+        ``n``, ``lip``, ``lam`` and whether F is real-valued.
+    p : float
+        Order of the Wasserstein distance.
+    alpha : float, default 0.999
+        Confidence of each accuracy on its own.
+
+    Returns
+    -------
+    dict of str to Guarantee
+        One :class:`Guarantee` per n-invariant, in the order given.
+
+    Examples
+    --------
+    The SARS-CoV-2 analysis of the article (Section 8.4) samples 53,433,249 quadruples
+    per cutoff, and takes ``alpha`` from a union bound over three accuracies at each of
+    five cutoffs:
+
+    >>> from n_invariants.invariants import (
+    ...     HYPERBOLICITY_DEFICIT, PAIRWISE_DISTANCE, VR_PERSISTENCE_4_1)
+    >>> result = guaranteed_accuracy(53_433_249, [PAIRWISE_DISTANCE, HYPERBOLICITY_DEFICIT,
+    ...                                           VR_PERSISTENCE_4_1], p=1, alpha=1 - 0.05 / 15)
+    >>> for g in result.values():
+    ...     print(f"{g.invariant:<22} {g.accuracy:.2e}  {g.statement}")
+    pairwise_distance      5.61e-04  Prop 6.6
+    hyperbolicity_deficit  5.61e-04  Prop 6.6
+    vr_persistence_4_1     1.00e-01  Cor 6.3
+    """
+    n_samples = int(n_samples)
+    if n_samples < 1:
+        raise ValueError("n_samples must be at least 1.")
+    named = invariants.items() if isinstance(invariants, Mapping) else (
+        (getattr(F, "name", None), F) for F in invariants)
+
+    result = {}
+    for name, F in named:
+        if not all(hasattr(F, attr) for attr in ("n", "lip", "lam", "real_valued")):
+            raise TypeError(
+                f"{name or F!r} carries no constants. Describe it as an "
+                "n_invariants.invariants.Invariant, with its n, lip, lam and real_valued."
+            )
+        if name in result:
+            raise ValueError(f"Two n-invariants are named {name!r}.")
+        lam = min(F.lam, F.lip)  # lip is always a valid range constant
+        accuracy = wasserstein_bound(n_samples, alpha, F.n, p, lip=F.lip, lam=lam)
+        statement = "Cor 6.3" if lam == F.lip else "Cor 6.5"
+        if F.real_valued:
+            direct = wasserstein_bound_real_valued(n_samples, alpha, p, lam=lam)
+            if direct <= accuracy:
+                accuracy, statement = direct, "Prop 6.6"
+        result[name] = Guarantee(name, float(accuracy), statement, n_samples, alpha, p)
+    return result

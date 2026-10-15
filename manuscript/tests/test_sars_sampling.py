@@ -10,6 +10,7 @@ condensed_hamming_rows = sampling.condensed_hamming_rows
 hyperbolicity_distribution_random_parallel = sampling.hyperbolicity_distribution_random_parallel
 persistence_set_random_parallel = sampling.persistence_set_random_parallel
 random_distribution_k_parallel = sampling.random_distribution_k_parallel
+joint_invariants_random_parallel = sampling.joint_invariants_random_parallel
 
 
 def toy_point_set(U=40, L=25, seed=0):
@@ -122,6 +123,29 @@ def test_hyperbolicity_wrapper_matches_a_manual_pass():
         hyperbolicity_vec, seq, U, n_samples, n=4, batch_size=batch, seed=2, n_workers=1
     )
     assert viaWrapper == viaGeneric
+
+
+def test_joint_sampler_matches_the_single_invariant_samplers():
+    """One sample of quadruples: each histogram is what the single-invariant sampler returns."""
+    seq = toy_point_set()
+    U = seq.shape[0]
+    weights = np.random.default_rng(1).random(U)
+    weights /= weights.sum()
+    n_samples = 17_003  # not a multiple of the batch size
+
+    def kwargs():
+        return dict(batch_size=3_000, p=weights, seed=np.random.SeedSequence([402, 1, 0]))
+
+    distances, deficits, diagrams = joint_invariants_random_parallel(
+        seq, U, n_samples, n_workers=3, **kwargs())
+    assert deficits == hyperbolicity_distribution_random_parallel(
+        seq, U, n_samples, n_workers=1, **kwargs())
+    assert diagrams == persistence_set_random_parallel(
+        seq, U, n_samples, 1, n_workers=2, **kwargs())
+    # The distance is that of the first pair of each quadruple.
+    assert distances == random_distribution_k_parallel(
+        distance_vec, seq, U, n_samples, n=4, n_workers=1, **kwargs())
+    assert sum(distances.values()) == sum(deficits.values()) == sum(diagrams.values()) == n_samples
 
 
 def test_package_sampler_reproduces_the_pipeline_sampler_on_hamming_data():

@@ -15,6 +15,9 @@ needed for a given accuracy does not depend on the number of points (see
 The sample count is split into fixed, independently seeded chunks that are merged by
 summation, so a run is reproducible from ``(seed, n_samples, batch_size)`` alone and does
 not depend on ``n_workers`` or on the order in which workers finish.
+
+The article's three distributions are all computed from one sample of quadruples
+(:func:`joint_invariants_random_parallel`), the distance from the first pair of each.
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ from __future__ import annotations
 import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 from itertools import combinations
 
 import numpy as np
@@ -35,6 +39,8 @@ __all__ = [
     "random_distribution_k_parallel",
     "hyperbolicity_distribution_random_parallel",
     "persistence_set_random_parallel",
+    "joint_invariants_vec",
+    "joint_invariants_random_parallel",
 ]
 
 # Published to forked workers via copy-on-write; never pickled.
@@ -125,18 +131,28 @@ def condensed_hamming_rows(seq, idx):
     return rows
 
 
-def _sampling_worker(chunks, n, square, p, f, f_args, f_kwargs):
-    """Process a list of ``(seed, size)`` chunks and return their merged histogram."""
+def _sampling_worker(chunks, n, square, p, f, f_args, f_kwargs, report=False):
+    """Process a list of ``(seed, size)`` chunks and return their merged histogram.
+
+    With ``report``, print the percentage of chunks done, in steps of 5%. All workers get the
+    same number of chunks (up to one), so a single reporting worker tracks the whole pool.
+    """
     seq = _WORKER_SEQ
     U = _WORKER_U
 
     f_list = []
-    for seed, size in chunks:
+    reported = 0
+    for done, (seed, size) in enumerate(chunks, start=1):
         rng = np.random.default_rng(seed)
         idx = sample_tuples(U, size, n, p=p, rng=rng)  # (size, n)
         rows = condensed_hamming_rows(seq, idx)  # (size, binom(n, 2))
         dm_sample = condensed_rows_to_square(rows, n) if square else rows
         f_list.append(f(dm_sample, *f_args, **f_kwargs))
+
+        percent = 100 * done // len(chunks)
+        if report and percent >= reported + 5:
+            reported = percent - percent % 5
+            print(f'  {reported:3d}% of batches ({datetime.now():%H:%M:%S})', flush=True)
 
     return merge_histogram_dicts(f_list) if f_list else {}
 
@@ -184,7 +200,7 @@ def random_distribution_k_parallel(
         this determines the result exactly.
     n_workers : int, optional
         Worker processes. Defaults to ``os.cpu_count()``. Affects only the speed, not
-        the result.
+        the result. The first worker prints the percentage of its batches done.
 
     Returns
     -------
@@ -227,7 +243,8 @@ def random_distribution_k_parallel(
         results = []
         with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as executor:
             futures = [
-                executor.submit(_sampling_worker, worker_chunks[i], n, square, p, f, args, kwargs)
+                executor.submit(_sampling_worker, worker_chunks[i], n, square, p, f, args, kwargs,
+                                i == 0)
                 for i in range(n_workers)
             ]
             for future in futures:
@@ -245,7 +262,7 @@ def _serial_from_chunks(chunks, f, seq, U, n, square, p, f_args, f_kwargs):
     _WORKER_SEQ = seq
     _WORKER_U = U
     try:
-        return _sampling_worker(chunks, n, square, p, f, f_args, f_kwargs)
+        return _sampling_worker(chunks, n, square, p, f, f_args, f_kwargs, report=True)
     finally:
         _WORKER_SEQ = None
         _WORKER_U = None
@@ -289,3 +306,61 @@ def persistence_set_random_parallel(
         seed=seed,
         n_workers=n_workers,
     )
+
+
+# ---------------------------------------------------------------------------
+# One sample of quadruples for all three invariants of the article.
+# ---------------------------------------------------------------------------
+# The callback tags every histogram key with its invariant, so that the generic merge across
+# chunks keeps the three histograms apart.
+_JOINT_TAGS = ("distance", "hyperbolicity", "persistence")
+
+
+def joint_invariants_vec(rows, round=4):
+    """Tagged histograms of the three invariants on the same quadruples.
+
+    ``rows`` holds the condensed ``(size, 6)`` distances of the sampled quadruples. The
+    pairwise distance is read off the first pair ``(x_1, x_2)`` of each quadruple: as a
+    4-point invariant its distribution is the distance distribution, and the first pairs of
+    independent quadruples are independent pairs. Returns ``{(tag, value): count}``.
+    """
+    values, counts = np.unique(rows[:, 0], return_counts=True)
+    histograms = (
+        dict(zip(values, counts)),
+        hyperbolicity_vec(rows, round=round),
+        persistence_set_vec(condensed_rows_to_square(rows, 4)),
+    )
+    return {
+        (tag, key): count
+        for tag, hist in zip(_JOINT_TAGS, histograms)
+        for key, count in hist.items()
+    }
+
+
+def joint_invariants_random_parallel(
+    seq, U, n_samples, batch_size=None, p=None, seed=None, n_workers=None, round=4
+):
+    """Sample ``n_samples`` quadruples once; return the three histograms computed from them.
+
+    Returns ``(distance, hyperbolicity, persistence)`` as ``{value: count}`` dicts, each over
+    all ``n_samples`` quadruples. For the same arguments, the last two equal what
+    :func:`hyperbolicity_distribution_random_parallel` and
+    :func:`persistence_set_random_parallel` (``k=1``) return, since the quadruples are the same.
+    """
+    joint = random_distribution_k_parallel(
+        joint_invariants_vec,
+        seq,
+        U,
+        n_samples,
+        n=4,
+        square=False,
+        batch_size=batch_size,
+        p=p,
+        seed=seed,
+        n_workers=n_workers,
+        round=round,
+    )
+    split = {tag: {} for tag in _JOINT_TAGS}
+    for (tag, key), count in joint.items():
+        split[tag][key] = count
+    return tuple(split[tag] for tag in _JOINT_TAGS)

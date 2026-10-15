@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "n-invariants"
-version = "1.1.0"
+version = "1.2.0"
 description = "Sample sizes and sampling for distributions of metric n-point invariants"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -45,6 +45,8 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 110
+# Only the code: not the documentation, and not the pyproject.toml files.
+include = ["src/**/*.py", "tests/**/*.py", "manuscript/**/*.py"]
 src = ["src", "manuscript/figures", "manuscript/substitution_models", "manuscript/sars_cov2"]
 
 [tool.ruff.lint]

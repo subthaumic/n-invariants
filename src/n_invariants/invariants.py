@@ -14,8 +14,22 @@ Function                        n         Value per tuple
                                           ``(birth, death)``
 ==============================  ========  ===============================================
 
-These are the invariants that :func:`n_invariants.empirical_distribution` takes. Their
-Lipschitz and range constants are listed in :mod:`n_invariants.bounds`.
+An :class:`Invariant` attaches to such a function what the bounds need: its tuple size
+``n``, its Lipschitz constant ``lip``, its range constant ``lam``, and whether its values are
+real numbers. :func:`n_invariants.guaranteed_accuracy` reads these to find what a sample guarantees for
+it. The article's three n-invariants come predefined (Prop 4.9 and Section 8.4):
+
+=========================  ==============================  ===  ===  ===  ========
+Invariant                  Function                        n    lip  lam  values
+=========================  ==============================  ===  ===  ===  ========
+``PAIRWISE_DISTANCE``      :func:`pairwise_distance`       2    1    1    real
+``HYPERBOLICITY_DEFICIT``  :func:`hyperbolicity_deficit`   4    2    1    real
+``VR_PERSISTENCE_4_1``     :func:`vr_persistence`          4    1    1    diagrams
+=========================  ==============================  ===  ===  ===  ========
+
+An :class:`Invariant` on k points also accepts rows of larger tuples, and evaluates on their
+first k points. Restricting to these points maps the curvature measure ``mu_m`` to ``mu_k``
+(Prop 4.4), so the values have the same distribution as on sampled k-tuples.
 
 :func:`hyperbolicity_vec` and :func:`persistence_set_vec` are histogram forms of the two
 four-point invariants that return ``{value: count}`` dictionaries. The samplers in
@@ -24,11 +38,17 @@ four-point invariants that return ``{value: count}`` dictionaries. The samplers 
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from itertools import combinations
 
 import numpy as np
 
 __all__ = [
+    "Invariant",
+    "PAIRWISE_DISTANCE",
+    "HYPERBOLICITY_DEFICIT",
+    "VR_PERSISTENCE_4_1",
     "pairwise_distance",
     "hyperbolicity_deficit",
     "vr_persistence",
@@ -38,12 +58,74 @@ __all__ = [
 ]
 
 
+@dataclass(frozen=True)
+class Invariant:
+    """A metric n-point invariant, together with the constants its bounds need.
+
+    Parameters
+    ----------
+    func : callable
+        Maps condensed distance rows of shape ``(size, n(n-1)/2)`` to one value per row, an
+        array of shape ``(size,)`` or ``(size, k)``.
+    n : int
+        Points per tuple.
+    lip : float
+        Lipschitz constant with respect to the supremum norm on distance matrices (Def 4.1).
+    lam : float, optional
+        Range constant: any ``lam`` with ``diam F(K_n(X)) <= lam * diam(X)``. Defaults to
+        ``lip``, which is always valid.
+    real_valued : bool, default False
+        Whether the values are real numbers, so that the bound for real-valued n-invariants
+        (Prop 6.6) applies.
+    name : str, optional
+        Defaults to the name of ``func``.
+
+    Calling an Invariant evaluates ``func``. Rows of tuples with more than ``n`` points are
+    first restricted to their first ``n`` points.
+    """
+
+    func: Callable
+    n: int
+    lip: float
+    lam: float | None = None
+    real_valued: bool = False
+    name: str | None = None
+
+    def __post_init__(self):
+        if int(self.n) != self.n or self.n < 2:
+            raise ValueError(f"n must be an integer of at least 2; got {self.n}.")
+        if not self.lip > 0:
+            raise ValueError(f"lip must be positive; got {self.lip}.")
+        if self.lam is None:
+            object.__setattr__(self, "lam", self.lip)
+        elif not self.lam > 0:
+            raise ValueError(f"lam must be positive; got {self.lam}.")
+        if self.name is None:
+            object.__setattr__(self, "name", getattr(self.func, "__name__", "invariant"))
+
+    def __call__(self, rows):
+        rows = np.asarray(rows)
+        if rows.ndim != 2:
+            raise ValueError(f"{self.name} expects condensed distance rows of shape (size, n(n-1)/2).")
+        m = _points_per_tuple(rows.shape[1])
+        if m < self.n:
+            raise ValueError(f"{self.name} needs tuples of at least {self.n} points; got {m}.")
+        if m > self.n:
+            rows = rows[:, _first_points_columns(m, self.n)]
+        return self.func(rows)
+
+
 def _points_per_tuple(n_pairs: int) -> int:
     """The n with ``n(n-1)/2 = n_pairs``."""
     n = int(round((1 + np.sqrt(1 + 8 * n_pairs)) / 2))
     if n * (n - 1) // 2 != n_pairs:
         raise ValueError(f"{n_pairs} columns are not the pairs of any number of points.")
     return n
+
+
+def _first_points_columns(m, k):
+    """The columns of condensed rows of m points that hold the pairs among the first k."""
+    return [col for col, (a, b) in enumerate(combinations(range(m), 2)) if b < k]
 
 
 def pairwise_distance(rows):
@@ -210,3 +292,11 @@ def condensed_rows_to_square(rows, n):
         blocks[:, a, b] = rows[:, idx]
         blocks[:, b, a] = rows[:, idx]
     return blocks
+
+
+# ---------------------------------------------------------------------------
+# The article's n-invariants with their constants (Prop 4.9 and Section 8.4)
+# ---------------------------------------------------------------------------
+PAIRWISE_DISTANCE = Invariant(pairwise_distance, n=2, lip=1, lam=1, real_valued=True)
+HYPERBOLICITY_DEFICIT = Invariant(hyperbolicity_deficit, n=4, lip=2, lam=1, real_valued=True)
+VR_PERSISTENCE_4_1 = Invariant(vr_persistence, n=4, lip=1, lam=1, name="vr_persistence_4_1")

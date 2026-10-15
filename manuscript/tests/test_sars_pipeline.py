@@ -5,7 +5,7 @@ stand-in from the Jukes-Cantor model instead: a few hundred aligned sequences in
 header format, dated so that every date slice of step 2 is populated. The pipeline's code
 is copied into a temporary directory and the copies run unchanged, so all their output
 lands there and the precomputed results are never touched. The only change is a coarser
-accuracy in step 2, which would otherwise draw the article's ~3.4e9 quadruples per slice.
+accuracy in step 2, which would otherwise draw the article's ~5.3e7 quadruples per slice.
 """
 
 import os
@@ -26,7 +26,7 @@ PIPELINE = Path(__file__).resolve().parents[1] / "sars_cov2"
 
 # One synthetic population per collection date, each drawn from the JC model at a later
 # time. Every date falls into a different slice of step 2 (cutoffs 2020-06-30, 2021-04-30,
-# 2021-10-31, 2022-03-01, 2024-03-01), so the slices grow by one population each.
+# 2021-10-31, 2022-03-01, 2024-01-31), so the slices grow by one population each.
 LAYERS = [
     ("2020-04-15", 0.01),
     ("2021-02-01", 0.02),
@@ -82,7 +82,7 @@ def test_pipeline_runs_end_to_end_on_a_synthetic_alignment(tmp_path):
     run(code_dir, ["step1_build_haplotype_array.py"], alignment)
     run(code_dir, ["-c", (
         "import step2_compute_invariants as step2\n"
-        "step2.epsilon, step2.epsilon_dist, step2.n_workers = 1.0, 0.1, 1\n"
+        "step2.epsilon, step2.n_workers = 1.0, 1\n"
         "step2.compute_invariants()\n"
     )], alignment)
     run(code_dir, ["step3_compute_mds.py"], alignment)
@@ -106,8 +106,12 @@ def test_pipeline_runs_end_to_end_on_a_synthetic_alignment(tmp_path):
         assert int(stored["n_sequences"]) == k * SEQUENCES_PER_LAYER
         distances = stored["dm_dict"].item()
         deficits = stored["hyp_hist"].item()
-        assert sum(distances.values()) == int(stored["n_samples_distance"])
-        assert sum(deficits.values()) == int(stored["n_samples_hyperbolicity"])
+        diagrams = stored["bd_dict"].item()
+        # All three histograms come from the same sample of quadruples.
+        n_samples = int(stored["n_samples"])
+        assert sum(distances.values()) == n_samples
+        assert sum(deficits.values()) == n_samples
+        assert sum(diagrams.values()) == n_samples
         assert 0 <= min(distances) and max(distances) <= LENGTH
         assert min(deficits) >= 0
 

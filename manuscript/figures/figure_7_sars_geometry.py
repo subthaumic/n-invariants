@@ -7,9 +7,10 @@ subsample, then the distributions of the pairwise distance, the four-point hyper
 deficit and the (4,1)-persistence. The rows use their own green colour family, distinct
 from the model rows of Figure 6.
 
-Each distribution panel shows the histogram sampled by
-``manuscript/sars_cov2/step2_compute_invariants.py``, at accuracy ``epsilon = 0.1`` for the
-four-point invariants and ``epsilon = 0.001`` for the distance, both at confidence 0.95.
+Each distribution panel shows a histogram sampled by
+``manuscript/sars_cov2/step2_compute_invariants.py``, which computes all three distributions
+of a cutoff from one sample of quadruples, sized for accuracy ``epsilon = 0.1`` for the
+curvature measure mu_4, with confidence 0.95 for all panels simultaneously.
 The script reads these precomputed results and does no sampling itself.
 
 The rows are fixed by EXPECTED_CUTOFFS, which matches CUTOFF_DATES in
@@ -86,7 +87,7 @@ EXPECTED_CUTOFFS = [
     "2021-10-31",
     "2022-03-01",
     # "2022-08-01",  # ALT Omicron (replaces 2022-03-01); keep in sync with CUTOFF_DATES.
-    "2024-03-01",
+    "2024-01-31",
 ]
 
 CUTOFF_LABELS = {
@@ -95,7 +96,8 @@ CUTOFF_LABELS = {
     "2021-10-31": ("31 Oct 2021", "Delta"),
     "2022-03-01": ("1 Mar 2022", "Omicron"),
     # "2022-08-01": ("1 Aug 2022", "Omicron"),  # ALT cutoff above
-    "2024-03-01": ("1 Mar 2024", "XBB"),
+    # Full dataset: 2024-01-31 is the last collection date (GISAID EPI_SET_261006ze).
+    "2024-01-31": ("31 Jan 2024", "XBB"),
 }
 
 # The real data gets its own green cubehelix family, defined here (the JC blue and HB warm

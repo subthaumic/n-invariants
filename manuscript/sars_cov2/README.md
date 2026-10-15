@@ -40,16 +40,17 @@ uv run python sars_cov2/step3_compute_mds.py
 |---|---|---|
 | 0 | filters by base and collection date, removes gap columns, deduplicates into haplotypes with multiplicities and dates | `work/curvature_set/` |
 | 1 | stores the haplotypes as a `uint8` array without constant columns | `work/curvature_set/` |
-| 2 | samples the three invariants at each cutoff, with sample sizes from `n_invariants.sample_size` (Cor. 6.5) | `results/invariants/` |
+| 2 | samples one set of quadruples per cutoff and computes all three distributions from it, with the sample size from `n_invariants.sample_size` for $\mu_4$ (Cor. 6.3) | `results/invariants/` |
 | 3 | embeds a subsample of 50,000 haplotypes by metric MDS, for Figure 7 | `results/mds/` |
 
 - Settings are constants at the top of each script, set to the values used in the article.
 - `sars_utils.py` holds the file layout and the FASTA helpers; `sampling.py` is the sampler
   of step 2.
 - Intermediate files go to `work/`, which is not committed.
-- Steps 2 and 3 write to `results/` and replace the precomputed files (step 3 only with
-  `OVERWRITE = True`).
-- The article's runs used 52 CPUs and about 700 GiB of memory; step 3 took about 27 hours.
+- Steps 2 and 3 write to `results/` and replace the precomputed files only with
+  `OVERWRITE = True`.
+- The article's runs used 52 CPUs and about 700 GiB of memory; step 2 took about 18 minutes per
+  cutoff and step 3 about 27 hours.
 
 ## Test
 

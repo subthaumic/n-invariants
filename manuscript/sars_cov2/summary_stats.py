@@ -134,7 +134,7 @@ def print_report(rows: list[dict]) -> None:
     print(f"  variance-to-mean ratio from {first['dist_var_over_mean']:.1f} "
           f"to {last['dist_var_over_mean']:.1f};")
     print(f"  sampled maximum over all cutoffs {max(r['dist_max'] for r in rows):.0f}; "
-          f"tail mass stays below {max(r['dist_tail_ppm'] for r in rows):.0f} ppm.")
+          f"tail mass is at most {max(r['dist_tail_ppm'] for r in rows):.1f} ppm.")
 
     table("Four-point hyperbolicity deficit", [
         ("P(hyp=0)", 11, lambda r: f"{r['hyp_p_zero'] * 100:.1f}%"),

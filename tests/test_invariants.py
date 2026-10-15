@@ -4,6 +4,10 @@ import numpy as np
 import pytest
 
 from n_invariants.invariants import (
+    HYPERBOLICITY_DEFICIT,
+    PAIRWISE_DISTANCE,
+    VR_PERSISTENCE_4_1,
+    Invariant,
     condensed_rows_to_square,
     hyperbolicity_deficit,
     hyperbolicity_vec,
@@ -114,3 +118,38 @@ def test_invariants_reject_rows_of_the_wrong_width():
         vr_persistence(np.ones((3, 3)))  # three points: no degree-k class on an odd number
     with pytest.raises(ValueError):
         vr_persistence(np.ones((3, 5)))  # five columns are not the pairs of any n
+
+
+def test_invariant_defaults_to_the_lipschitz_constant_as_range_constant():
+    F = Invariant(hyperbolicity_deficit, n=4, lip=2)
+    assert (F.lam, F.name, F.real_valued) == (2, "hyperbolicity_deficit", False)
+
+
+def test_invariant_rejects_invalid_constants():
+    with pytest.raises(ValueError):
+        Invariant(pairwise_distance, n=1, lip=1)
+    with pytest.raises(ValueError):
+        Invariant(pairwise_distance, n=2, lip=0)
+    with pytest.raises(ValueError):
+        Invariant(pairwise_distance, n=2, lip=1, lam=0)
+
+
+def test_the_article_constants():
+    """Prop 4.9 and Section 8.4."""
+    constants = [(F.n, F.lip, F.lam, F.real_valued)
+                 for F in (PAIRWISE_DISTANCE, HYPERBOLICITY_DEFICIT, VR_PERSISTENCE_4_1)]
+    assert constants == [(2, 1, 1, True), (4, 2, 1, True), (4, 1, 1, False)]
+
+
+def test_invariant_on_larger_tuples_reads_their_first_points():
+    """On five points, the pairs among the first four are columns 0, 1, 2, 4, 5, 7."""
+    rows = np.random.default_rng(4).integers(0, 9, size=(300, 10)).astype(float)
+    assert np.array_equal(HYPERBOLICITY_DEFICIT(rows), hyperbolicity_deficit(rows[:, [0, 1, 2, 4, 5, 7]]))
+    assert np.array_equal(PAIRWISE_DISTANCE(rows), rows[:, 0])
+    assert np.array_equal(VR_PERSISTENCE_4_1(rows[:, [0, 1, 2, 4, 5, 7]]),
+                          vr_persistence(rows[:, [0, 1, 2, 4, 5, 7]]))
+
+
+def test_invariant_rejects_tuples_with_too_few_points():
+    with pytest.raises(ValueError, match="at least 4 points"):
+        HYPERBOLICITY_DEFICIT(np.ones((3, 3)))
