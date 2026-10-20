@@ -32,6 +32,7 @@ n-invariants = "n_invariants.cli:main"
 
 [project.urls]
 Repository = "https://github.com/subthaumic/n-invariants"
+Paper = "https://arxiv.org/abs/2610.26070"
 
 [dependency-groups]
 dev = [

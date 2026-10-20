@@ -366,7 +366,7 @@ wheels = [
 [[package]]
 name = "n-invariants"
 version = "1.1.0"
-source = { git = "https://github.com/subthaumic/n-invariants?rev=v1.1.0#73c25bd7308f3e2d59e0965eeaeca607bb4f3b61" }
+source = { git = "https://github.com/subthaumic/n-invariants?rev=v1.1.0#68ac4eafa572b35298995cb22702ae56b1ff696f" }
 dependencies = [
     { name = "numpy" },
     { name = "scipy" },

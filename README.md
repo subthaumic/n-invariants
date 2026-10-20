@@ -6,7 +6,7 @@ Companion code for the article
 
 > **Distributions of metric $n$-point invariants and applications to molecular evolution**  
 > Michael Bleher, Mario Gómez, Facundo Mémoli, Maximilian Neumann and Andreas Ott  
-> Preprint forthcoming
+> [arXiv:2610.26070](https://arxiv.org/abs/2610.26070)
 
 Data can often be viewed as samples from a metric measure space $(X,d_X,\mu_X)$, where $d_X$ measures distances between possible observations and $\mu_X$ is the distribution by which they occur.
 The geometry of $X$ then carries information about the data-generating process, much of which is accessible through *metric $n$-point invariants*, quantities that depend only on the distances within an $n$-tuple.
@@ -185,9 +185,18 @@ The results of both are stored in the repository, so every figure can be redrawn
 
 ## Citation
 
-The article reference will be added when the preprint appears.
+If you use this code, please cite the article:
+
+```bibtex
+@misc{bleher2026distributions,
+  title         = {Distributions of metric $n$-point invariants and applications to molecular evolution},
+  author        = {Bleher, Michael and G{\'o}mez, Mario and M{\'e}moli, Facundo and Neumann, Maximilian and Ott, Andreas},
+  year          = {2026},
+  eprint        = {2610.26070},
+  archivePrefix = {arXiv},
+  primaryClass  = {math.MG},
+  url           = {https://arxiv.org/abs/2610.26070},
+}
+```
+
 To cite the software, use [`CITATION.cff`](CITATION.cff).
-
-## License
-
-MIT, see [LICENSE](LICENSE).
